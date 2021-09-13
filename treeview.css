@@ -60,17 +60,17 @@
 }
 
 .tv-folder::before {
-    content: url("/static/tv_node_collapsed.png");
+    content: url("/tv_node_collapsed.png");
     margin: 0 6px 0 2px;
 }
 
 .tv-folder-expanded::before {
-    content: url("/static/tv_node_expanded.png");
+    content: url("/tv_node_expanded.png");
     margin: 0 6px 0 2px;
 }
 
 .tv-node::before {
-    content: url("/static/tv_node.png");
+    content: url("/tv_node.png");
     margin: 0 6px 0 2px;
 }
 
