@@ -266,11 +266,11 @@ treeView1.onNode_beforeRemove = function(node, info) {
   log("node was removed [" + node.textContent + "]");
 };
 
-treeView1.onNode_click = function(node) {
+treeView1.onNode_click = function(node, e) {
   log("click on node: [" + node.textContent + "]");
 };
 
-treeView1.onNode_dblclick = function(node) {
+treeView1.onNode_dblclick = function(node, e) {
   console.log(node);
   log("double click on node [" + node.textContent + "]");
   if (this.getNodeInfo(node).type == "node") treeView1.editNode(node);
