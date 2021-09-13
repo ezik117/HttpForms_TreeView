@@ -60,13 +60,13 @@ class treeView
     {
       if (obj.getNodeType(e.currentTarget) == "folder")
       {
-        obj.onNode_dblclick(e.currentTarget); // вызов пользовательской функции
+        obj.onNode_dblclick(e.currentTarget, e); // вызов пользовательской функции
       }
       else
       {
         if (obj.generateOnNodeDoubleClick)
         {
-          obj.onNode_dblclick(e.currentTarget); // вызов пользовательской функции
+          obj.onNode_dblclick(e.currentTarget, e); // вызов пользовательской функции
         }
       }
     } 
@@ -94,11 +94,11 @@ class treeView
     {
       if (obj.getNodeType(e.currentTarget) == "node")
       {
-        obj.onNode_click(e.currentTarget); // вызов пользовательской функции
+        obj.onNode_click(e.currentTarget, e); // вызов пользовательской функции
       }
       else
       {
-        if (obj.generateOnFolderClick) obj.onNode_click(e.currentTarget); // вызов пользовательской функции
+        if (obj.generateOnFolderClick) obj.onNode_click(e.currentTarget, e); // вызов пользовательской функции
       }
     }
     e.stopPropagation();
@@ -128,7 +128,7 @@ class treeView
 
   // --------------------------------------------------------------------------
   // -- вспомогательная функция для addNode и addFolder
-  _addNode(parentNode, node1, node2, noExpand)
+  _addNode(parentNode, node1, node2, addToFolder)
   {
     let parent = this._getElement(parentNode);
 
@@ -146,7 +146,7 @@ class treeView
       }
       else if (this.getNodeType(parent) == "folder")
       {
-        if (parent.classList.contains("tv-folder-expanded") || noExpand)
+        if (parent.classList.contains("tv-folder-expanded") || addToFolder)
         {
           parent.nextElementSibling.children[0].appendChild(node1); // append into folder
           if (node2 != null) node1.insertAdjacentElement('afterend', node2);
@@ -340,10 +340,10 @@ class treeView
   /* IN: parentNode - элемент или ID родительского узла, если null добавляет в корневой список
          newNodeId - ID нового узла, если не null
          newNodeText - текст узла
-         noExpand=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
+         addToFolder=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
     OUT: возвращает объект DOM нового узла
   */
-  addNode(parentNode, newNodeId, newNodeText, noExpand=false)
+  addNode(parentNode, newNodeId, newNodeText, addToFolder=false)
   {
     let nodeRow = document.createElement("div");
     nodeRow.classList.add("tv-row", "tv-node");
@@ -359,7 +359,7 @@ class treeView
     nodeRow.addEventListener("click", this._onNode_click);
     nodeRow.addEventListener("dblclick", this._onNode_dblclick);
 
-    this._addNode(parentNode, nodeRow, null, noExpand);
+    this._addNode(parentNode, nodeRow, null, addToFolder);
 
     return nodeRow;
   }
@@ -369,10 +369,10 @@ class treeView
   /* IN: parentNode - элемент или ID родительского узла, если null добавляет в корневой список
          newFolderId - ID новой папки, если не null
          newFolderText - текст папки
-         noExpand=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
+         addToFolder=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
     OUT: возвращает объект DOM новой папки
   */
-  addFolder(parentNode, newFolderId, newFolderText, noExpand=false)
+  addFolder(parentNode, newFolderId, newFolderText, addToFolder=false)
   {
     let folderRow = document.createElement("div");
     folderRow.classList.add("tv-row", "tv-folder");
@@ -396,7 +396,7 @@ class treeView
 
     groupRow.appendChild(groupCol);
 
-    this._addNode(parentNode, folderRow, groupRow, noExpand);
+    this._addNode(parentNode, folderRow, groupRow, addToFolder);
 
     return folderRow;
   }
@@ -587,7 +587,7 @@ class treeView
 
   // --------------------------------------------------------------------------
   // пользовательская обработка двойного щелчка onNode_dblclick(node)
-  /* IN: node - ссылка на DOM объект
+  /* IN: node - ссылка на DOM объект, e - JS event
      OUT: -
   */
   onNode_dblclick = null;
@@ -595,7 +595,7 @@ class treeView
 
   // --------------------------------------------------------------------------
   // пользовательская обработка одинарного щелчка onNode_click(node)
-  /* IN: node - ссылка на DOM объект
+  /* IN: node - ссылка на DOM объект, e - JS event
      OUT: -
   */
   onNode_click = null;
