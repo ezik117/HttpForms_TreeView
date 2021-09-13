@@ -68,6 +68,41 @@ onData_loaded() | Возникает по завершении загрузки 
 
 ## ПРИМЕРЫ
 
+```html
+    <head>
+        <link rel="stylesheet" type="text/css" href="/treeview.css" />
+    </head>
+
+    <body>
+
+        <script src="/treeview.js"></script>
+
+        <img style="display:none" src="/tv_node_expanded.png"><!--cached image-->
+        <img style="display:none" src="/tv_node_collapsed.png"><!--cached image-->
+        <img style="display:none" src="/tv_node.png"><!--cached image-->
+
+        <div class="tv-control" id="treeView1">
+            <div class="tv-group-col">
+                <!--defining a row with type 'node'-->
+                <div class="tv-row tv-node"><div class="tv-col">Element 1.0</div></div>
+                <!--node end-->
+
+                <!--defining a row with type 'folder'-->
+                <div class="tv-row tv-folder tv-folder-expanded" id="n30r"><div class="tv-col" id="n30c">Element 2.0</div></div>
+                <!--require group container-->
+                <div class="tv-group-row"><div class="tv-group-col">
+                    <div class="tv-row tv-node"><div class="tv-col">Element 2.1</div></div>
+                    <div class="tv-row tv-node"><div class="tv-col">Element 2.2</div></div>
+                </div></div>
+                <!--container end-->
+                <!--folder end-->
+
+            </div>  
+        </div>
+    </body>
+</html>
+```
+
 ```javascript
 log = function(msg) {
   let out = document.getElementById("stdout");
