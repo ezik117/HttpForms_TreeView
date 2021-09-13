@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="/static/treeview.css" />
+    </head>
+
+    <body>
+
+        <script src="/static/treeview.js"></script>
+
+        <img style="display:none" src="/static/tv_node_expanded.png"><!--cached image-->
+        <img style="display:none" src="/static/tv_node_collapsed.png"><!--cached image-->
+        <img style="display:none" src="/static/tv_node.png"><!--cached image-->
+
+        <div class="tv-control" id="treeView1">
+            <div class="tv-group-col">
+                <!--defining a row with type 'node'-->
+                <div class="tv-row tv-node"><div class="tv-col">Element 1.0</div></div>
+                <!--node end-->
+
+                <div class="tv-row tv-node"><div class="tv-col">Element 2.0</div></div>
+
+                <!--defining a row with type 'folder'-->
+                <div class="tv-row tv-folder tv-folder-expanded" id="n30r"><div class="tv-col" id="n30c">Element 3.0</div></div>
+                <!--require group container-->
+                <div class="tv-group-row"><div class="tv-group-col">
+                    <div class="tv-row tv-node"><div class="tv-col">Element 3.1</div></div>
+                    <div class="tv-row tv-node"><div class="tv-col">Element 3.2</div></div>
+                </div></div>
+                <!--container end-->
+                <!--folder end-->
+
+                <div class="tv-row tv-node"><div class="tv-col">Element 4.0</div></div>
+
+            </div>  
+        </div>
+
+
+        <br><br>
+        <table>
+            <tr align="left">
+                <td colspan="2"><input id="node_name" value="new node"></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('nodeInsert')">Insert node</button></td>
+                <td><button type="button" onclick="callFunc('nodeAppend')">Append root node</button></td>
+                <tc>&nbsp;</tc>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('folderInsert')">Insert folder</button></td>
+                <td><button type="button" onclick="callFunc('folderAppend')">Append root folder</button></td>
+            </tr>
+            <tr align="left">
+                <td colspan="2"><button type="button" onclick="callFunc('remove')">Remove</button></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('editNode')">Edit node</button></td>
+                <td><button type="button" onclick="callFunc('changeNode')">Change node</button></td>
+            </tr>
+            <tr align="left">
+                <td colspan="2"><button type="button" onclick="callFunc('clear')">Clear all</button></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('expandFolder')">Expand folder</button></td>
+                <td><button type="button" onclick="callFunc('collapseFolder')">Collapse folder</button></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('expandAll')">Expand all</button></td>
+                <td><button type="button" onclick="callFunc('collapseAll')">Collapse all</button></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('loadFromJson')">Load from JSON</button></td>
+                <td><button type="button" onclick="callFunc('saveToJson')">Save to JSON</button></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('loadFromFile')">Load from JSON file</button></td>
+                <td><input type="file" accept=".json" id="jsonFile"></td>
+            </tr>
+            <tr align="left">
+                <td><button type="button" onclick="callFunc('getParent')">Get parent node</button></td>
+                <td><button type="button" onclick="callFunc('getPath')">Get full path</button></td>
+            </tr>
+        </table>
+
+        <br><br>
+        <table>
+            <tr align="left">
+                <td>Source JSON:</td><td>Destinaton JSON:</td>
+            </tr>
+            <tr align="left">
+                <td>
+                    <textarea style="width: 300px; height: 150px; overflow: auto;" id="jsonIn"></textarea>
+                </td>
+                <td>
+                    <textarea style="width: 300px; height: 150px; overflow: auto;" id="jsonOut"></textarea>
+                </td>
+            </tr>
+        </table>
+        
+
+        <br><br>
+        <textarea style="width: 600px; height: 200px; overflow: auto; background-color: #404040; color: #e0e0e0;" id="stdout"></textarea>
+
+        <script>
+            /* DEMO */
+            function callFunc(mode)
+            {
+                if (mode == 'nodeInsert')
+                {
+                    treeView1.addNode(treeView1.SelectedNode, null, document.getElementById("node_name").value);
+                }
+                else if (mode == "nodeAppend")
+                {
+                    treeView1.addNode(null, null, document.getElementById("node_name").value);
+                }
+                else if (mode == "folderInsert")
+                {
+                    treeView1.addFolder(treeView1.SelectedNode, null, document.getElementById("node_name").value);
+                }
+                else if (mode == "folderAppend")
+                {
+                    treeView1.addFolder(null, null, document.getElementById("node_name").value);
+                }
+                else if (mode == "remove")
+                {
+                    treeView1.delNode(treeView1.SelectedNode);
+                }
+                else if (mode == "editNode")
+                {
+                    treeView1.editNode(treeView1.SelectedNode);
+                }
+                else if (mode == "changeNode")
+                {
+                    treeView1.changeNode(treeView1.SelectedNode, document.getElementById("node_name").value);
+                }
+                else if (mode == "clear")
+                {
+                    treeView1.clear();
+                }
+                else if (mode == "expandFolder")
+                {
+                    treeView1.openFolder(treeView1.SelectedNode);
+                }
+                else if (mode == "collapseFolder")
+                {
+                    treeView1.openFolder(treeView1.SelectedNode, false);
+                }
+                else if (mode == "expandAll")
+                {
+                    treeView1.expandAll();
+                }
+                else if (mode == "collapseAll")
+                {
+                    treeView1.expandAll(false);
+                }
+                else if (mode == "loadFromJson")
+                {
+                    treeView1.loadJSON(document.getElementById("jsonIn").value);
+                }
+                else if (mode == "saveToJson")
+                {
+                    document.getElementById("jsonOut").value = treeView1.saveJSON();
+                }
+                else if (mode == "loadFromFile")
+                {
+                    let file = document.getElementById("jsonFile").files[0];
+                    if (file) {
+                        let reader = new FileReader();
+                        reader.onload = function (e) {
+                            treeView1.loadJSON(e.target.result);
+                        }
+                        reader.onerror = function (e) {
+                            log("error reading file");
+                        }
+                        reader.readAsText(file, "UTF-8");
+                    }
+                }
+                else if (mode == "getParent")
+                {
+                    let parent = treeView1.getParentNode(treeView1.SelectedNode);
+                    log("Parent: " + (parent ? parent.textContent : 'root'));
+                }
+                else if (mode == "getPath")
+                {
+                    console.log(treeView1.getFullPath(treeView1.SelectedNode, true));
+                }
+            }
+
+            var jsonSample = '\
+{\n\
+   "treeId":"",\n\
+   "nodes": [\n\
+   {\n\
+      "id":"id10",\n\
+      "text":"Root folder 1.0",\n\
+      "type":"folder",\n\
+      "nodes":[\n\
+      {\n\
+         "id":"id11",\n\
+         "text":"Node 1.1",\n\
+         "type":"node"\n\
+      },\n\
+      {\n\
+         "id":"id12",\n\
+         "text":"Node 1.2",\n\
+         "type":"node"\n\
+      }\n\
+      ]\n\
+   },\n\
+   {\n\
+      "id":"id20",\n\
+      "text":"Root folder 2.0",\n\
+      "type":"folder",\n\
+      "nodes":[\n\
+      {\n\
+         "id":"id21",\n\
+         "text":"Folder 2.1",\n\
+         "type":"folder",\n\
+         "nodes":[\n\
+         {\n\
+            "id":"id211",\n\
+            "text":"Folder 2.1.1",\n\
+            "type":"folder",\n\
+            "nodes":[\n\
+            {\n\
+               "id":"id2111",\n\
+               "text":"Node 2.1.1.1------------------------",\n\
+               "type":"node",\n\
+               "nodes":[\n\
+               ]\n\
+            }\n\
+            ]\n\
+      }\n\
+         ]\n\
+      }\n\
+      ]\n\
+   },\n\
+   {\n\
+      "id":"id30",\n\
+      "text":"Root node 3",\n\
+      "type":"node"\n\
+   }\n\
+   ]\n\
+}';
+            document.getElementById("jsonIn").value = jsonSample;
+
+            /* --- DEMO --- */
+
+log = function(msg) {
+  let out = document.getElementById("stdout");
+  out.value += msg + "\n";
+  out.scrollTop = out.scrollHeight;
+}
+
+var treeView1 = new treeView("treeView1");
+treeView1.generateOnNodeDoubleClick = true;
+
+treeView1.onNode_beforeRemove = function(node, info) {
+  if (info.type == "folder" && info.length != 0)
+  {
+    log("error [Can't remove. Folder is full]");
+    alert("Can't remove. Folder is full");
+    return false;
+  }
+  log("node was removed [" + node.textContent + "]");
+};
+
+treeView1.onNode_click = function(node) {
+  log("click on node: [" + node.textContent + "]");
+};
+
+treeView1.onNode_dblclick = function(node) {
+  console.log(node);
+  log("double click on node [" + node.textContent + "]");
+  if (this.getNodeInfo(node).type == "node") treeView1.editNode(node);
+};
+
+treeView1.onNode_select = function(node) {
+  log("selected node [" + node.textContent + "]");
+};
+
+treeView1.onNode_changed = function(node) {
+  log("changed node [" + node.textContent + "]");
+};
+
+treeView1.onData_loaded = function() {
+  log("JSON data was loaded");
+};
+
+treeView1.SelectedNode = "n10";
+        </script>
+
+
+        
+
+    </body>
+</html>

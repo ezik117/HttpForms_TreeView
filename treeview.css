@@ -1,0 +1,88 @@
+.tv-control {
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    width: 400px;
+    height: 300px;
+    overflow: auto;
+    white-space: nowrap;
+    padding: 5px;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.tv-group-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    width: 100%;
+    box-sizing: border-box;
+    cursor: default;
+    padding-left: 20px;
+}
+
+.tv-group-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    box-sizing: border-box;
+}
+
+.tv-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    width: 100%;
+    box-sizing: border-box;
+    cursor: default;
+}
+
+.tv-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    
+    box-sizing: border-box;
+    user-select: none;
+    min-width: 0; /*to compensate white-space with flex*/
+}
+
+.tv-row:hover {
+    background-color: #f0f0f0;
+}
+
+.tv-folder {
+    font-weight: bold;
+}
+
+.tv-folder::before {
+    content: url("/static/tv_node_collapsed.png");
+    margin: 0 6px 0 2px;
+}
+
+.tv-folder-expanded::before {
+    content: url("/static/tv_node_expanded.png");
+    margin: 0 6px 0 2px;
+}
+
+.tv-node::before {
+    content: url("/static/tv_node.png");
+    margin: 0 6px 0 2px;
+}
+
+.tv-collapse {
+    display: none;
+}
+
+.tv-selected {
+    background-color: wheat;
+}
+
+.tv-editable {
+    border: 1px solid navy;
+    font-style: italic;
+}
