@@ -69,6 +69,8 @@ onData_loaded() | Возникает по завершении загрузки 
 ## ПРИМЕРЫ
 
 ```html
+<!DOCTYPE html>
+<html>
     <head>
         <link rel="stylesheet" type="text/css" href="/treeview.css" />
     </head>
