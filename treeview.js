@@ -1,3 +1,15 @@
+/*
+ОПИСАНИЕ:
+  Элемент HTML TreeView.
+
+АВТОР:
+  Ермолаев А.Н. (copyrighted)
+
+ИСТОРИЯ ИЗМЕНЕНИЙ:
+  2023.12.04 - Добавлен атрибут 'data-id', который теперь содержит идентификатор элементов. 
+               Классический HTML element ID больше не используется.
+
+*/
 
 class treeView
 {
@@ -12,6 +24,10 @@ class treeView
   /* ====== ВНУТРЕННИЕ ФУНКЦИИ ============================================= */
 
   // -- конструктор -----------------------------------------------------------
+  /**
+   * 
+   * @param {DOMElement} componentId - контейнер. Объект типа <DIV>.
+   */
   constructor(componentId)
   {
     this._componentId = componentId;
@@ -29,13 +45,19 @@ class treeView
     {
         nodes[i].addEventListener("click", this._onNode_click, false);
         nodes[i].addEventListener("dblclick", this._onNode_dblclick, false);
+        nodes[i].addEventListener("contextmenu", this._onNode_contextmenu, false);
     }
 
     this._lastClickTimestamp = Date.now();
   }
 
   // --------------------------------------------------------------------------
-  // событие. обработка двойного щелчка на узле
+  /**
+   * Cобытие. обработка двойного щелчка на узле.
+   * 
+   * @param {MouseEvent} e 
+   * @returns 
+   */
   _onNode_dblclick(e)
   {
     let obj = e.currentTarget.closest(".tv-control")._base;
@@ -74,7 +96,12 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // событие. обработка щелчка на узле
+  /**
+   * Cобытие. обработка щелчка на узле.
+   * 
+   * @param {MouseEvent} e 
+   * @returns 
+   */
   _onNode_click(e)
   {
     let obj = e.currentTarget.closest(".tv-control")._base;
@@ -105,22 +132,50 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // возвращает объект по ID если передана строка или сам объект
-  /* IN: ID элемента без префикса # или ссылка на DOM элемент
-     OUT: ссылка на DOM элемент */
+  /**
+   * Cобытие. обработка щелчка ПКМ на узле.
+   * 
+   * @param {MouseEvent} e 
+   * @returns 
+   */
+  _onNode_contextmenu(e)
+  {
+    let obj = e.currentTarget.closest(".tv-control")._base;
+
+    if (e.currentTarget.contentEditable == "true") return; // элемент редактируется, щелчки не обрабатываются
+
+    if (obj.onNode_contextmenu != null)
+    {
+        obj.onNode_contextmenu(e.currentTarget, e); // вызов пользовательской функции
+    }
+    e.stopPropagation();
+  }
+
+  // --------------------------------------------------------------------------
+  /**
+   * Возвращает узел (DOMElement) по "data-id'. Если передан DOMElement возвращает его же.
+   * 
+   * @param {DOMElement | string} val - DOM элемент узла или 'data-id' узла.
+   * @returns {DOMElement} - DOM-элемент узла если найдено или null.
+   */
   _getElement(val)
   {
     if (!val) return null;
 
     let ret;
     if (typeof val === 'string')
-      ret = this._base.querySelector("#" + val);
+      ret = this._base.querySelector(`[data-id='${val}']`);
     else
       ret = val;
     return ret;
   }
 
   // --------------------------------------------------------------------------
+  /**
+   * Выводит в консоль сообщение.
+   * 
+   * @param {object} msg 
+   */
   _d(msg)
   {
     console.log(msg);
@@ -223,6 +278,24 @@ class treeView
     if (obj.onNode_changed != null) obj.onNode_changed(e.currentTarget);
   }
 
+  /**
+   * Раскрывает все узлы TreeView являющиеся родительскими для укзанного.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   */
+  _expandNodePath(node)
+  {
+    let parent = null;
+    do{
+      parent = this.getParentNode(node);
+      if (parent != null)
+      {
+        this.openFolder(parent, true);
+      }
+      node = parent;
+    } while (parent != null);
+  }
+
   // --------------------------------------------------------------------------
   // рекурсивная функция вставки элементов для loadJSON()
   _loadJSON(nodes, parent)
@@ -265,16 +338,43 @@ class treeView
   /* ====== ПУБЛИЧНЫЕ ПЕРЕМЕННЫЕ =========================================== */
 
   // --------------------------------------------------------------------------
-  // getter для this._selectedNode
+  /**
+   * Возвращает DOM-элемент выбранного узла или null.
+   * 
+   * @returns {DOMElement} - DOM-элемент выбранного узла или null.
+   */
   get SelectedNode()
   {
     return this._selectedNode;
   }
 
   // --------------------------------------------------------------------------
-  // setter для this._selectedNode
+  /**
+   * Выбирает узел, подсвечивает его и раскрывает все его родительские папки.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   */
   set SelectedNode(val)
   {
+    // проверка переданного значения на допустимый тип
+    if (val != null)
+    {
+      let checkResult = typeof(val) === "string";
+      if (!checkResult)
+      {
+        try {
+          checkResult = val.nodeName === "DIV";
+        } catch {
+          checkResult = false;
+        }
+      }
+      if (!checkResult)
+      {
+        console.log("ERROR: Value must be 'null', string or DOM element");
+        return;
+      }
+    }
+
     let el = this._getElement(val);
 
     let oldSelectedNode = this._selectedNode;
@@ -284,27 +384,54 @@ class treeView
     if (el != null) 
     {
       el.classList.add("tv-selected");
+      this._expandNodePath(el);
+
       if (oldSelectedNode != el) this._onNode_select(el);
     }
   }
 
-  // если true, то будет вызываться событие onNode_click для одиночного щелчка
-  // на папке. По умолчанию отключено, т.к. двойной щелчок порождает вначале
-  // событие onNode_click, а затем onNode_dblclick
+  // --------------------------------------------------------------------------
+  /**
+   * Вовращает 'data-id' выбранного узла или null.
+   * 
+   * @returns {string} - Строковое значение 'data-id'.
+   */
+  get SelectedNodeId()
+  {
+    try
+    {
+      return this._selectedNode.getAttribute("data-id");
+    }
+    catch
+    {
+      return null;
+    }
+  }
+
+
+  /**
+   * Если true, то будет вызываться событие onNode_click для одиночного щелчка
+   * на папке. По умолчанию отключено, т.к. двойной щелчок порождает вначале
+   * событие onNode_click, а затем onNode_dblclick
+   */
   generateOnFolderClick = false;
 
-  // если true, то будет вызываться событие onNode_dblclick для двойного щелчка
-  // на узле. По умолчанию отключено, т.к. двойной щелчок порождает вначале
-  // событие onNode_click, а затем onNode_dblclick
+  /**
+   * Если true, то будет вызываться событие onNode_dblclick для двойного щелчка
+   * на узле. По умолчанию отключено, т.к. двойной щелчок порождает вначале
+   * событие onNode_click, а затем onNode_dblclick
+   */
   generateOnNodeDoubleClick = false;
 
 
   /* ====== ПУБЛИЧНЫЕ ФУНКЦИИ ============================================== */
 
   // --------------------------------------------------------------------------
-  // возвращает тип узла
-  /* IN: элемент или ID узла
-     OUT: одно из значений: "folder", "node", "null"
+ /**
+  * Возвращает тип узла.
+  * 
+  * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла. 
+  * @returns {string} - тип узла: "folder", "node", "null"
   */
   getNodeType(node)
   {
@@ -316,16 +443,22 @@ class treeView
   }
 
     // --------------------------------------------------------------------------
-  // возвращает информацию об узле
-  /* IN: элемент или ID узла
-     OUT: id, text, type, expanded, length (количество элементов в списке)
+  /**
+  * Возвращает основную информацию об узле.
+  * 
+  * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла. 
+  * @returns {object} - id ('data-id'),
+  *                     text (название),
+  *                     type (тип узла),
+  *                     expanded (true/false - развернут узел или нет),
+  *                     length (количество дочерних элементов, если есть)
   */
   getNodeInfo(node)
   {
     let el = this._getElement(node);
     let info = {};
     if (el == null) return;
-    info.id = el.id;
+    info.id = el.getAttribute("data-id");
     info.text = el.children[0].textContent;
     info.type = this.getNodeType(el);
     info.expanded = (el.classList.contains("tv-folder-expanded") ? true : false);
@@ -336,18 +469,20 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // добавить узел
-  /* IN: parentNode - элемент или ID родительского узла, если null добавляет в корневой список
-         newNodeId - ID нового узла, если не null
-         newNodeText - текст узла
-         addToFolder=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
-    OUT: возвращает объект DOM нового узла
+ /**
+  * Добавляет узел типа "папка" к дереву.
+  * 
+  * @param {DOMElement} parentNode - Элемент или 'data-id' родительского узла, если null добавляет в корневой список
+  * @param {string} newFolderId - 'data-id' новой папки, если не null
+  * @param {string} newFolderText - Текст узла
+  * @param {boolean} addToFolder - Если true и parentNode это папка, то добавляет узел как дочерний элемент, если false-то добавляет после с тем же уровнем
+  * @returns {DOMElement} - DOM-элемент нового узла
   */
   addNode(parentNode, newNodeId, newNodeText, addToFolder=false)
   {
     let nodeRow = document.createElement("div");
     nodeRow.classList.add("tv-row", "tv-node");
-    if (newNodeId != null) nodeRow.setAttribute("id", newNodeId);
+    if (newNodeId != null) nodeRow.setAttribute("data-id", newNodeId);
 
     let nodeCol = document.createElement("div");
     nodeCol.classList.add("tv-col");
@@ -358,6 +493,7 @@ class treeView
     nodeRow.appendChild(nodeCol);
     nodeRow.addEventListener("click", this._onNode_click);
     nodeRow.addEventListener("dblclick", this._onNode_dblclick);
+    nodeRow.addEventListener("contextmenu", this._onNode_contextmenu);
 
     this._addNode(parentNode, nodeRow, null, addToFolder);
 
@@ -365,18 +501,20 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // добавить папку
-  /* IN: parentNode - элемент или ID родительского узла, если null добавляет в корневой список
-         newFolderId - ID новой папки, если не null
-         newFolderText - текст папки
-         addToFolder=false - если true и parent=folder, то вставляет в папку, если false-то добавляет после
-    OUT: возвращает объект DOM новой папки
+ /**
+  * Добавляет узел типа "папка" к дереву.
+  * 
+  * @param {DOMElement} parentNode - Элемент или 'data-id' родительского узла, если null добавляет в корневой список
+  * @param {string} newFolderId - 'data-id' новой папки, если не null
+  * @param {string} newFolderText - Текст узла
+  * @param {boolean} addToFolder - Если true и parentNode это папка, то добавляет узел как дочерний элемент, если false-то добавляет после с тем же уровнем
+  * @returns {DOMElement} - DOM-элемент нового узла
   */
   addFolder(parentNode, newFolderId, newFolderText, addToFolder=false)
   {
     let folderRow = document.createElement("div");
     folderRow.classList.add("tv-row", "tv-folder");
-    if (newFolderId != null) folderRow.setAttribute("id", newFolderId);
+    if (newFolderId != null) folderRow.setAttribute("data-id", newFolderId);
 
     let folderCol = document.createElement("div");
     folderCol.classList.add("tv-col");
@@ -387,6 +525,7 @@ class treeView
     folderRow.appendChild(folderCol);
     folderRow.addEventListener("click", this._onNode_click);
     folderRow.addEventListener("dblclick", this._onNode_dblclick);
+    folderRow.addEventListener("contextmenu", this._onNode_contextmenu);
 
     let groupRow = document.createElement("div");
     groupRow.classList.add("tv-group-row", "tv-collapse");
@@ -402,11 +541,12 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // открывает/закрывает папку
-  /* IN: node - элемент или ID элемента
-         expand - если false то закрывает, иначе открывает. true по умолчанию
-     OUT: -
-  */
+  /**
+   * Раскрывает / сворачивает указанную папку.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   * @param {boolean} expand - Если true (по умолчанию)-то раскрывает папку, если false-сворачивает.
+   */
   openFolder(node, expand=true)
   {
     let el = this._getElement(node);
@@ -427,28 +567,39 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // раскрывает/закрывает все узлы
-  /* IN: expand - если false то закрывает, иначе открывает. true по умолчанию
-     OUT: -
-  */
-  expandAll(expand=true)
+  /**
+   * Раскрывает все узлы TreeView.
+   */
+  expandAll()
   {
     let nodes = this._base.getElementsByClassName("tv-folder");
     for (let i=0; i<nodes.length; i++)
     {
-      if (expand)
-        this.openFolder(nodes[i]);
-      else
-        this.openFolder(nodes[i], false);
+      this.openFolder(nodes[i]);
     }
   }
 
   // --------------------------------------------------------------------------
-  // удаляет узел или папку
-  /* IN: node - элемент или ID элемента
-     OUT: -
-  */
-  delNode(node)
+  /**
+   * Сворачивает все узлы TreeView.
+   */
+  collapseAll()
+  {
+    let nodes = this._base.getElementsByClassName("tv-folder");
+    for (let i=0; i<nodes.length; i++)
+    {
+      this.openFolder(nodes[i], false);
+    }
+  }
+
+
+  // --------------------------------------------------------------------------
+  /**
+   * Удаляет указанный узел из TreeView.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   */
+  deleteNode(node)
   {
     let el = this._getElement(node);
     if (el == null) return;
@@ -467,29 +618,41 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // переводит выбранный узел в режим редактирования текста
-  /* IN: node - элемент или ID элемента
-     OUT: -
-  */  
-  editNode(node)
+  /** 
+   * Переводит выбранный узел в режим редактирования текста (прямой ручной ввод).
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   * @param {boolean} enableEditing - если true, то узел переводится в режим редактирования,
+   *                                  false - отменяет.
+   */  
+  setNodeEditable(node, enableEditing)
   {
     let el = this._getElement(node);
     if (el == null) return;
 
-    this._storedEditableText = el.textContent;
-    el.contentEditable = "true";
-    el.focus();
-    el.addEventListener("keydown", this._editNode_keydown);
-    el.addEventListener("focusout", this._editNode_focusout);
-    el.classList.add("tv-editable");
+    if (enableEditing)
+    {
+      this._storedEditableText = el.textContent;
+      el.contentEditable = "true";
+      el.focus();
+      el.addEventListener("keydown", this._editNode_keydown);
+      el.addEventListener("focusout", this._editNode_focusout);
+      el.classList.add("tv-editable");
+    }
+    else
+    {
+      el.contentEditable = "false";
+      el.removeEventListener("keydown", this._editNode_keydown);
+      el.removeEventListener("focusout", this._editNode_focusout);
+      el.classList.remove("tv-editable");
+    }
   }
 
 
   // --------------------------------------------------------------------------
-  // удалить все содержимое 
-  /* IN: -
-     OUT: -
-  */  
+  /** 
+   * Удалить все содержимое из TreeView (очистка дерева).
+   */  
   clear()
   {
     while (this._base.children[0].firstChild) {
@@ -498,11 +661,13 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // меняет текст в укзанном узле
-  /* IN: node - элемент или ID элемента
-     OUT: -
-  */  
-  changeNode(node, text)
+  /** 
+   * Задает текст в укзанном узле.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   * @param {string} text - новый текст узла TreeView.
+   */  
+  setNodeText(node, text)
   {
     let el = this._getElement(node);
     if (el == null) return;
@@ -512,10 +677,12 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // загружает компонент из JSON 
-  /* IN: data - данные в JSON формате
-     OUT: -
-  */  
+  /** 
+   * Загружает компонент TreeView из JSON.
+   * Предварительно удаляет старый контент.
+   * 
+   * @param {string} data - древовидная структура данных в JSON формате
+   */  
   loadJSON(data)
   {
     this.clear();
@@ -527,10 +694,11 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // экспортирует компонент в JSON 
-  /* IN: data - 
-     OUT: строковые данные в JSON формате
-  */ 
+  /**
+   * Экспортирует структуру TreeView в JSON.
+   * 
+   * @returns {string}: строковые данные в JSON формате
+   */ 
   saveJSON()
   {
     let arr = {};
@@ -538,6 +706,18 @@ class treeView
     arr.nodes = [];
     this._saveJSON(this._base, arr);
     return JSON.stringify(arr);
+  }
+
+  // --------------------------------------------------------------------------
+  /**
+   * Возвращает DOM элемент узла по его 'data-id'.
+   * 
+   * @param {string} id - Строка с идентификатором 'data-id' узла.
+   * @returns {object} - DOM-элемент узла
+   */
+  getNodeById(id)
+  {
+    return this._getElement(id);
   }
 
   // --------------------------------------------------------------------------
@@ -557,12 +737,16 @@ class treeView
   }
 
   // --------------------------------------------------------------------------
-  // возвращает цепочку родительских элементов выбранного узла начиная с корневого
-  /* IN: node - элемент или ID элемента
-         asText - если true, то возвращает названия узлов, иначе возвращает ссылки на объекты
-     OUT: массив ссылок на элементы, или пустой массив, если родителя нет
-  */
-  getFullPath(node, asText = false)
+  /**
+   * Возвращает цепочку родительских элементов выбранного узла начиная с корневого в виде массива.
+   * Массив может содержать либо названия узлов, либо DOM-элементы.
+   * 
+   * @param {DOMElement | string} node - DOM элемент узла или 'data-id' узла.
+   * @param {boolean} asText - Если true, то в массив будут помещены только названия узлов,
+   *                     если false - то DOM-элементы.
+   * @returns {Array} - Массив с цепочкой узлов от родительского до указанного без самого узла.
+   */
+  getNodeFullPath(node, asText = false)
   {
     let ret = [];
     let parent;
@@ -571,13 +755,13 @@ class treeView
       if (parent != null)
       {
         if (asText)
-        ret.unshift(parent.children[0].textContent);
+          ret.unshift(parent.children[0].textContent);
         else
           ret.unshift(parent);
       }
       node = parent;
     } while (parent != null);
-
+  
     return ret;
   }
 
@@ -586,45 +770,51 @@ class treeView
   /* ====== ПОЛЬЗОВАТЕЛЬСКИЕ СОБЫТИЯ ========================================*/
 
   // --------------------------------------------------------------------------
-  // пользовательская обработка двойного щелчка onNode_dblclick(node)
-  /* IN: node - ссылка на DOM объект, e - JS event
-     OUT: -
-  */
+  /** 
+   * Ссылка на пользовательскую функцию двойного щелчка onNode_dblclick(node, e)
+   */
   onNode_dblclick = null;
 
 
   // --------------------------------------------------------------------------
-  // пользовательская обработка одинарного щелчка onNode_click(node)
-  /* IN: node - ссылка на DOM объект, e - JS event
-     OUT: -
-  */
+  /** 
+   * Ссылка на пользовательскую функцию двойного щелчка onNode_dblclick(node, e)
+   */
   onNode_click = null;
 
   // --------------------------------------------------------------------------
-  // событие до удаления узла/папки onNode_beforeRemove(node, type, hasNodes)
-  // IN: node - удаляемый элемент (DOM element), info - информация об элементе (getNodeInfo())
-  // OUT: если функция возвращает false, то удаление отменяется 
+  /** 
+   * Ссылка на пользовательскую функцию щелчка ПКМ (вызов контекстного меню) onNode_contextmenu(node, e)
+   */
+  onNode_contextmenu = null;
+
+  // --------------------------------------------------------------------------
+  /** 
+   * Ссылка на пользовательскую функцию события возникающего перед удалением узла.
+   * onNode_beforeRemove(node, type, hasNodes), где:
+   * - node - удаляемый элемент (DOM element)
+   * - info - информация об элементе (getNodeInfo())
+   * - hasNodes - true, если удаляемый узел содержит дочерние элементы.
+   * Если пользовательская функция возвращает false, то удаление отменяется.
+   */
   onNode_beforeRemove = null;
 
   // --------------------------------------------------------------------------
-  // событие выбора узла/папки onNode_select(node)
-  /* IN: node - ссылка на DOM объект
-     OUT: -
-  */
+  /** 
+   * Ссылка на пользовательскую функцию события возникающего при выборе узла (узел подсвечивается)
+   */
   onNode_select = null;
 
   // --------------------------------------------------------------------------
-  // событие изменение текста узла onNode_changed(node)
-  /* IN: node - ссылка на DOM объект
-     OUT: -
-  */
+  /** 
+   * Ссылка на пользовательскую функцию события возникающего после изменения текста узла
+   */
   onNode_changed = null;
 
   // --------------------------------------------------------------------------
-  // событие возникающее после загрузки данных JSON
-  /* IN: -
-     OUT: -
-  */
+  /** 
+   * Ссылка на пользовательскую функцию события возникающего после загрузки данных JSON
+   */
   onData_loaded = null;
 
   // --------------------------------------------------------------------------
@@ -637,6 +827,7 @@ class treeView
 
 
 }
+
 
 /* 
 ВСТАВКА:
